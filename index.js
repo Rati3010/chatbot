@@ -112,6 +112,96 @@ const chat = createChat({
         };
       },
     },
+    {
+      name: "translate_text",
+      description: "Translate text from one language to another",
+      parameters: {
+        type: "object",
+        properties: {
+          text: {
+            type: "string",
+            description: "The text to translate",
+          },
+          sourceLanguage: {
+            type: "string",
+            description: "The source language code (e.g., 'en' for English)",
+          },
+          targetLanguage: {
+            type: "string",
+            description: "The target language code (e.g., 'fr' for French)",
+          },
+        },
+        required: ["text", "sourceLanguage", "targetLanguage"],
+      },
+      function: async ({ text, sourceLanguage, targetLanguage }) => {
+        // Use a language translation API (e.g., Google Translate) to perform the translation
+        const translationResult = await performTranslation(
+          text,
+          sourceLanguage,
+          targetLanguage
+        );
+        return {
+          translatedText: translationResult,
+        };
+      },
+    },
+    {
+      name: "unit_conversion",
+      description: "Convert units from one measurement to another",
+      parameters: {
+        type: "object",
+        properties: {
+          value: {
+            type: "number",
+            description: "The value to convert",
+          },
+          fromUnit: {
+            type: "string",
+            description: "The source unit (e.g., 'meters')",
+          },
+          toUnit: {
+            type: "string",
+            description: "The target unit (e.g., 'feet')",
+          },
+        },
+        required: ["value", "fromUnit", "toUnit"],
+      },
+      function: async ({ value, fromUnit, toUnit }) => {
+        const convertedValue = performUnitConversion(value, fromUnit, toUnit);
+        return {
+          result: convertedValue,
+        };
+      },
+    },
+    {
+        name: "currency_conversion",
+        description: "Convert currency from one currency to another",
+        parameters: {
+          type: "object",
+          properties: {
+            amount: {
+              type: "number",
+              description: "The amount to convert",
+            },
+            fromCurrency: {
+              type: "string",
+              description: "The source currency code (e.g., 'USD')",
+            },
+            toCurrency: {
+              type: "string",
+              description: "The target currency code (e.g., 'EUR')",
+            },
+          },
+          required: ["amount", "fromCurrency", "toCurrency"],
+        },
+        function: async ({ amount, fromCurrency, toCurrency }) => {
+          // Implement currency conversion logic using an exchange rate API
+          const convertedAmount = await performCurrencyConversion(amount, fromCurrency, toCurrency);
+          return {
+            result: convertedAmount,
+          };
+        },
+      }      
   ],
   functionCall: "auto",
 });
