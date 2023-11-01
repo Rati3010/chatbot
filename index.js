@@ -106,42 +106,9 @@ const chat = createChat({
         );
         let data = await res_single.json();
         return {
-          location: data.name, //weather api
-          temperature: data.main.temp, //weather api
+          location: data.name,
+          temperature: data.main.temp,
           unit: "celsius",
-        };
-      },
-    },
-    {
-      name: "translate_text",
-      description: "Translate text from one language to another",
-      parameters: {
-        type: "object",
-        properties: {
-          text: {
-            type: "string",
-            description: "The text to translate",
-          },
-          sourceLanguage: {
-            type: "string",
-            description: "The source language code (e.g., 'en' for English)",
-          },
-          targetLanguage: {
-            type: "string",
-            description: "The target language code (e.g., 'fr' for French)",
-          },
-        },
-        required: ["text", "sourceLanguage", "targetLanguage"],
-      },
-      function: async ({ text, sourceLanguage, targetLanguage }) => {
-        // Use a language translation API (e.g., Google Translate) to perform the translation
-        const translationResult = await performTranslation(
-          text,
-          sourceLanguage,
-          targetLanguage
-        );
-        return {
-          translatedText: translationResult,
         };
       },
     },
@@ -167,6 +134,63 @@ const chat = createChat({
         required: ["value", "fromUnit", "toUnit"],
       },
       function: async ({ value, fromUnit, toUnit }) => {
+        function performUnitConversion(value, fromUnit, toUnit) {
+          const conversionFactors = {
+            length: {
+              meters: {
+                feet: 3.28084,
+                yards: 1.09361,
+              },
+              feet: {
+                meters: 0.3048,
+                yards: 0.333333,
+              },
+              yards: {
+                meters: 0.9144,
+                feet: 3,
+              },
+            },
+            weight: {
+              kilograms: {
+                pounds: 2.20462,
+                grams: 1000,
+              },
+              pounds: {
+                kilograms: 0.453592,
+                grams: 453.592,
+              },
+              grams: {
+                kilograms: 0.001,
+                pounds: 0.00220462,
+              },
+            },
+            temperature: {
+              celsius: {
+                fahrenheit: (celsius) => (celsius * 9) / 5 + 32,
+              },
+              fahrenheit: {
+                celsius: (fahrenheit) => ((fahrenheit - 32) * 5) / 9,
+              },
+            },
+          };
+
+          if (
+            !conversionFactors[fromUnit] ||
+            !conversionFactors[fromUnit][toUnit]
+          ) {
+            return "Invalid units for conversion.";
+          }
+
+          if (typeof conversionFactors[fromUnit][toUnit] === "function") {
+            const convertedValue = conversionFactors[fromUnit][toUnit](value);
+            return convertedValue;
+          } else {
+            const conversionFactor = conversionFactors[fromUnit][toUnit];
+            const convertedValue = value * conversionFactor;
+            return convertedValue;
+          }
+        }
+
         const convertedValue = performUnitConversion(value, fromUnit, toUnit);
         return {
           result: convertedValue,
@@ -174,34 +198,70 @@ const chat = createChat({
       },
     },
     {
-        name: "currency_conversion",
-        description: "Convert currency from one currency to another",
-        parameters: {
-          type: "object",
-          properties: {
-            amount: {
-              type: "number",
-              description: "The amount to convert",
-            },
-            fromCurrency: {
-              type: "string",
-              description: "The source currency code (e.g., 'USD')",
-            },
-            toCurrency: {
-              type: "string",
-              description: "The target currency code (e.g., 'EUR')",
-            },
+      name: "currency_conversion",
+      description: "Convert currency from one currency to another",
+      parameters: {
+        type: "object",
+        properties: {
+          amount: {
+            type: "number",
+            description: "The amount to convert",
           },
-          required: ["amount", "fromCurrency", "toCurrency"],
+          fromCurrency: {
+            type: "string",
+            description: "The source currency code (e.g., 'USD')",
+          },
+          toCurrency: {
+            type: "string",
+            description: "The target currency code (e.g., 'EUR')",
+          },
         },
-        function: async ({ amount, fromCurrency, toCurrency }) => {
-          // Implement currency conversion logic using an exchange rate API
-          const convertedAmount = await performCurrencyConversion(amount, fromCurrency, toCurrency);
-          return {
-            result: convertedAmount,
-          };
-        },
-      }      
+        required: ["amount", "fromCurrency", "toCurrency"],
+      },
+      function: async ({ amount, fromCurrency, toCurrency }) => {
+        const exchangeRates = {
+          USD: 1,
+          EUR: 0.85,
+          GBP: 0.75,
+          JPY: 110,
+          AUD: 1.3,
+          CAD: 1.25,
+          INR: 75,
+          CNY: 6.5,
+          MXN: 20,
+          AED: 3.67,
+          BRL: 5.39,
+          ZAR: 14.55,
+          SAR: 3.75,
+          SEK: 8.77,
+          CHF: 0.92,
+          NZD: 1.44,
+          SGD: 1.33,
+          HKD: 7.77,
+          RUB: 74.6,
+          KRW: 1173,
+          TRY: 14.2,
+        };
+
+        function performCurrencyConversion(amount, fromCurrency, toCurrency) {
+          if (!exchangeRates[fromCurrency] || !exchangeRates[toCurrency]) {
+            return "Invalid currency codes for conversion.";
+          }
+          const convertedAmount =
+            (amount / exchangeRates[fromCurrency]) * exchangeRates[toCurrency];
+          return convertedAmount;
+        }
+
+        const convertedAmount = await performCurrencyConversion(
+          amount,
+          fromCurrency,
+          toCurrency
+        );
+        return {
+          result: convertedAmount,
+        };
+      },
+    },
   ],
   functionCall: "auto",
 });
